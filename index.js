@@ -23,6 +23,12 @@ async function getBIC() {
     const zip = await new AdmZip(archieve);
     zip.extractAllTo(dataFolder, true);
 
+    //deleting zip-file
+
+    await fs.unlink(archieve, (err) => {
+        if (err) throw err;
+      });
+
     //get xml-file
     const dataFolderFiles = await fs.readdir(dataFolder);
     let xmlName;
@@ -33,7 +39,7 @@ async function getBIC() {
         }
     }
 
-    const xmlPath = await path.resolve(dataFolder, xmlName);
+    const xmlPath =  path.resolve(dataFolder, xmlName);
     const xmlFile = await fs.readFile(xmlPath, "utf-8",
                                       function (err, data) {
                                         if (err) throw err;
@@ -42,8 +48,8 @@ async function getBIC() {
 
     //parsing
     const parser = new DOMParser();
-    const xmlDoc = await parser.parseFromString(xmlFile, "text/xml");
-    const nodesAcc = await xmlDoc.getElementsByTagName("Accounts");
+    const xmlDoc =  parser.parseFromString(xmlFile, "text/xml");
+    const nodesAcc = xmlDoc.getElementsByTagName("Accounts");
     
     const bicArray = []; //result
     
@@ -56,7 +62,14 @@ async function getBIC() {
         bicArray.push(obj)
     }) 
 
-    console.log(bicArray[0], bicArray[5], bicArray[10])
+
+    //deleting used xml-file
+    await fs.unlink(xmlPath, (err) => {
+        if (err) throw err;
+      });
+
+      console.log(bicArray[0], bicArray[5], bicArray[10])
+
 }
 
 getBIC();

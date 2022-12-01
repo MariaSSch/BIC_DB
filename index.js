@@ -4,10 +4,14 @@ const AdmZip = require("adm-zip");
 const fs = require('fs').promises;
 const { DOMParser } = require('xmldom');
 const iconv = require('iconv-lite');
+const { Buffer } = require('buffer');
 
 const url = "http://www.cbr.ru/s/newbik";
 const dataFolder = path.resolve(__dirname, 'dataFolder');
 const archieve = path.resolve(dataFolder, "archieve.zip");
+
+const bicArray = []; //result
+
 
 async function getBIC() {
     console.log("get started")
@@ -23,12 +27,7 @@ async function getBIC() {
     const zip = await new AdmZip(archieve);
     zip.extractAllTo(dataFolder, true);
 
-    //deleting zip-file
-
-    await fs.unlink(archieve, (err) => {
-        if (err) throw err;
-      });
-
+   
     //get xml-file
     const dataFolderFiles = await fs.readdir(dataFolder);
     let xmlName;
@@ -51,12 +50,11 @@ async function getBIC() {
     const xmlDoc =  parser.parseFromString(xmlFile, "text/xml");
     const nodesAcc = xmlDoc.getElementsByTagName("Accounts");
     
-    const bicArray = []; //result
     
     Array.from(nodesAcc).forEach(item => {
         const obj = {
             bic: item.parentNode.getAttribute('BIC'),
-            name: iconv.decode(item.parentNode.firstChild.getAttribute('NameP'), "utf-8"), //???
+            name: iconv.decode(Buffer.from(item.parentNode.firstChild.getAttribute('NameP')), "utf-8"), //???
             corrAccount: item.getAttribute('Account')
         }
         bicArray.push(obj)

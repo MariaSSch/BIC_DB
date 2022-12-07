@@ -4,7 +4,6 @@ const AdmZip = require("adm-zip");
 const fs = require('fs').promises;
 const { DOMParser } = require('xmldom');
 const iconv = require('iconv-lite');
-const { Buffer } = require('buffer');
 
 const url = "http://www.cbr.ru/s/newbik";
 const dataFolder = path.resolve(__dirname, 'dataFolder');
@@ -14,23 +13,24 @@ const bicArray = []; //result
 
 
 async function getBIC() {
-    console.log("get started")
+    console.log("get started");
 
     //download
     const response = await (await fetch(url)).buffer();
-    await fs.writeFile(archieve, response, (err) => {
-        if(err) return console.error(err)
-    });
+ 
+    await fs.writeFile(archieve, response, (err) => console.log(err));
     
     //extract
     console.log('extracting..')
-    const zip = await new AdmZip(archieve);
+    const zip = new AdmZip(archieve);
     zip.extractAllTo(dataFolder, true);
 
    
     //get xml-file
-    const dataFolderFiles = await fs.readdir(dataFolder);
-    let xmlName;
+
+    const dataFolderFiles = await fs.readdir(dataFolder, (err) => console.error(err));
+    
+    let xmlName; //имя файла .xml
    
     for (item of dataFolderFiles) {
         if(path.extname(item) === ".xml") {
@@ -39,12 +39,9 @@ async function getBIC() {
     }
 
     const xmlPath =  path.resolve(dataFolder, xmlName);
-    const xmlFile = await fs.readFile(xmlPath, "utf-8",
-                                      function (err, data) {
-                                        if (err) throw err;
-                                        return data;
-                                    });
 
+    const xmlFile = await fs.readFile(xmlPath, "utf-8", (err) => console.error(err));
+    
     //parsing
     const parser = new DOMParser();
     const xmlDoc =  parser.parseFromString(xmlFile, "text/xml");
@@ -54,19 +51,19 @@ async function getBIC() {
     Array.from(nodesAcc).forEach(item => {
         const obj = {
             bic: item.parentNode.getAttribute('BIC'),
-            name: iconv.decode(Buffer.from(item.parentNode.firstChild.getAttribute('NameP')), "utf-8"), //???
+            //name: iconv.decode(Buffer.from(item.parentNode.firstChild.getAttribute('NameP')), "utf-8"), //???
+            name: item.parentNode.firstChild.getAttribute('NameP'), //???
             corrAccount: item.getAttribute('Account')
         }
-        bicArray.push(obj)
+        bicArray.push(obj);
     }) 
 
 
     //deleting used xml-file
-    await fs.unlink(xmlPath, (err) => {
-        if (err) throw err;
-      });
+        await fs.unlink(xmlPath, (err)=>console.error(err));
+        
 
-      console.log(bicArray[0], bicArray[5], bicArray[10])
+      console.log(bicArray[0], bicArray[5], bicArray[10]);
 
 }
 

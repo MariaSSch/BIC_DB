@@ -4,6 +4,7 @@ const AdmZip = require("adm-zip");
 const fs = require('fs').promises;
 const { DOMParser } = require('xmldom');
 const iconv = require('iconv-lite');
+const { BUFFER } = require('adm-zip/util/constants');
 
 const url = "http://www.cbr.ru/s/newbik";
 const dataFolder = path.resolve(__dirname, 'dataFolder');
@@ -40,8 +41,10 @@ async function getBIC() {
 
     const xmlPath =  path.resolve(dataFolder, xmlName);
 
-    const xmlFile = await fs.readFile(xmlPath, "utf-8", (err) => console.error(err));
+    const xmlFileB = await fs.readFile(xmlPath, (err) => console.error(err));
     
+    const xmlFile = iconv.decode(Buffer.from(xmlFileB), "win1251")
+
     //parsing
     const parser = new DOMParser();
     const xmlDoc =  parser.parseFromString(xmlFile, "text/xml");
